@@ -1,0 +1,79 @@
+
+---
+- name: Deploy Node.js App
+  hosts: webservers
+  become: yes
+
+  vars:
+    repo_url: "https://github.com/rat9615/simple-nodejs-app.git"
+    app_dir: "/home/ubuntu/node-app"
+    nodejs_version: "22"
+    app_user: "ubuntu"
+    service_name: "node-app"
+
+  tasks:
+    - name: Update package cache
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Install Git and curl
+      ansible.builtin.apt:
+        name:
+          - git
+          - curl
+        state: present
+
+    - name: Install Node.js
+      ansible.builtin.shell:
+        cmd: |
+          curl -fsSL https://deb.nodesource.com/setup_{{ nodejs_version }}.x | bash -
+          apt-get install -y nodejs
+
+    - name: Clone application repository
+      ansible.builtin.git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        update: no
+
+    - name: Set application directory ownership
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        recurse: yes
+
+    - name: Install application dependencies
+      ansible.builtin.command:
+        cmd: npm ci
+        chdir: "{{ app_dir }}"
+      become_user: "{{ app_user }}"
+
+    - name: Create Node.js systemd service
+      ansible.builtin.copy:
+        dest: "/etc/systemd/system/{{ service_name }}.service"
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=Node.js Application
+          After=network.target
+
+          [Service]
+          Type=simple
+          User={{ app_user }}
+          WorkingDirectory={{ app_dir }}
+          ExecStart=/usr/bin/npm start
+          Restart=always
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Enable and start Node.js service
+      ansible.builtin.systemd_service:
+        name: "{{ service_name }}"
+        enabled: yes
+        state: started
+        daemon_reload: yes
+

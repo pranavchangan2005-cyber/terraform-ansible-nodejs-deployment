@@ -1,0 +1,21 @@
+# Private SSH keys
+*.pem
+
+# Terraform state and local data
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Terraform variable files
+*.tfvars
+*.tfvars.json
+
+# CLI crash logs
+crash.log
+crash.*.log
+
+# AWS CLI installer archive
+awscliv2.zip
+
+inventory.ini
+/aws/
