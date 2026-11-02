@@ -77,6 +77,94 @@ Before running this project, ensure you have:
 - An existing AWS EC2 key pair and its private key.
 - Git installed.
 
+## Prerequisites for Other Users
+
+Before deploying this project, make sure you have:
+
+- An AWS account with permission to create EC2 instances and security groups.
+- AWS CLI configured with valid credentials.
+- Terraform installed.
+- Ansible installed on the machine running Terraform.
+- An existing EC2 key pair named `ansible-key` in the `ap-south-1` region.
+- The matching private key saved as `ansible-key.pem` in the project directory.
+- Your current public IP address for SSH access.
+
+## Clone and Deploy
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/pranavchangan2005-cyber/terraform-ansible-nodejs-deployment.git
+cd terraform-ansible-nodejs-deployment
+```
+
+### 2. Configure AWS credentials
+
+```bash
+aws configure
+aws sts get-caller-identity
+```
+
+### 3. Prepare the SSH key
+
+Place your own `ansible-key.pem` file in the project directory. It must match the EC2 key pair named `ansible-key` in your AWS account.
+
+```bash
+chmod 400 ansible-key.pem
+```
+
+Never upload your private key to GitHub.
+
+### 4. Install required tools
+
+Ensure `terraform`, `ansible-playbook`, `ssh`, and the AWS CLI are installed and available in your PATH.
+
+### 5. Initialize Terraform
+
+```bash
+terraform init
+terraform validate
+```
+
+### 6. Deploy the application
+
+Replace `YOUR_PUBLIC_IP` with your current public IP address.
+
+```bash
+terraform apply -var="ssh_allowed_cidr=YOUR_PUBLIC_IP/32"
+```
+
+Review the plan and type `yes` to approve.
+
+Terraform creates the EC2 instance and security group, then runs Ansible to install Node.js, clone the application, install dependencies, and configure the systemd service.
+
+### 7. Open the application
+
+```bash
+terraform output application_url
+```
+
+Copy the displayed URL into your browser.
+
+### 8. Destroy the infrastructure when finished
+
+```bash
+terraform destroy -var="ssh_allowed_cidr=YOUR_PUBLIC_IP/32"
+```
+
+Review the plan and type `yes` to confirm. This removes the Terraform-managed EC2 instance and security group.
+
+## Important Notes
+
+- This project uses the AWS region `ap-south-1` (Mumbai).
+- The EC2 key pair must exist in the same AWS account and region.
+- The SSH ingress rule is restricted to the supplied IP CIDR.
+- Port 3000 is publicly accessible in the current configuration.
+- AWS charges may apply while resources are running.
+- The EC2 public IP may change if the instance is replaced.
+- Terraform state files, private keys, and credentials must never be committed to GitHub.
+
+
 ## Deployment Steps
 
 ### 1. Clone the repository
